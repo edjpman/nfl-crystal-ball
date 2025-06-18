@@ -1,8 +1,8 @@
 
 library(nflfastR)
-#library(tidygeocoder)
-#library(httr)
-#library(jsonlite)
+library(httr)
+library(jsonlite)
+library(dplyr)
 
 
 
@@ -58,7 +58,8 @@ collz1 <- c('play_id','game_id','home_team','away_team','season_type','week','do
 'temp','wind','stadium_id','game_stadium','play','out_of_bounds')
 
 
-collz2 <- c('play_id','game_id','home_team','away_team','season_type','location','stadium_id','game_stadium')
+collz2 <- c('play_id','game_id','game_date','home_team','away_team','posteam','defteam','season_type','location','stadium_id','game_stadium','quarter_seconds_remaining',
+'time','start_time','time_of_day','qtr','qb_hit','total_home_score','total_away_score')
 
 
 pbp <- read_pbp(path = file)
@@ -68,7 +69,19 @@ pbp <- data_subset(df = pbp, colz = collz1, team = "KC")
 
 pbp <- data_subset(df = pbp, colz = collz2, team = "KC")
 
-#pbp <- pbp[pbp$season_type == "POST", ]
+
+
+pbp2 <- pbp %>%
+  mutate(qb_hit = ifelse(is.na(qb_hit), 0, qb_hit)) %>%
+  group_by(game_id, defteam) %>%
+  arrange(game_id, defteam, play_id) %>%  # play_id ensures chronological order
+  mutate(cum_qb_hits = cumsum(qb_hit)) %>%
+  ungroup()
+
+#pbp <- pbp[pbp$posteam == "KC", ]
+
+pbp <- pbp[pbp$play_id != 1, ]
+
 
 #print(head(pbp))
 #print(colnames(pbp))
@@ -97,8 +110,36 @@ stadium_mapping <- data.frame(
 
 
 
+get_weather <- function(lat, lon, date) {
+  base_url <- "https://archive-api.open-meteo.com/v1/archive"
+  
+  res <- GET(base_url, query = list(
+    latitude = lat,
+    longitude = lon,
+    start_date = date,
+    end_date = date,
+    daily = "temperature_2m_max,temperature_2m_min,precipitation_sum",
+    timezone = "auto"
+  ))
+  
+  weather <- fromJSON(content(res, "text", encoding = "UTF-8"))
+  return(weather$daily)
+}
+
+
+
 pbp <- merge(x=pbp, y=stadium_mapping,by='game_stadium', all.x=TRUE)
 
-View(as.data.frame(pbp))
+#pbp <- pbp[160:200,]
 
+# print('Making weather API call...')
+# weather_list <- lapply(1:nrow(pbp), function(i) {
+#   get_weather(pbp$latitude[i], pbp$longitude[i], pbp$game_date[i])
+# })
+# print('Weather data call finished!')
+
+
+# games_weather <- cbind(pbp, do.call(rbind, weather_list))
+
+View(as.data.frame(pbp))
 
