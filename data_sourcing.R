@@ -59,7 +59,8 @@ collz1 <- c('play_id','game_id','home_team','away_team','season_type','week','do
 
 
 collz2 <- c('play_id','game_id','game_date','home_team','away_team','posteam','defteam','season_type','location','stadium_id','game_stadium','quarter_seconds_remaining',
-'time','start_time','time_of_day','qtr','qb_hit','total_home_score','total_away_score')
+'time','start_time','time_of_day','qtr','qb_hit','total_home_score','total_away_score','score_differential','sack','penalty','penalty_yards','tackled_for_loss','third_down_converted',
+'third_down_failed','fourth_down_converted','fourth_down_failed','rush_attempt','pass_attempt','incomplete_pass','ydsnet')
 
 
 pbp <- read_pbp(path = file)
@@ -72,10 +73,20 @@ pbp <- data_subset(df = pbp, colz = collz2, team = "KC")
 
 
 pbp2 <- pbp %>%
-  mutate(qb_hit = ifelse(is.na(qb_hit), 0, qb_hit)) %>%
+  mutate(qb_hit = ifelse(is.na(qb_hit), 0, qb_hit),
+  sack = ifelse(is.na(sack), 0, sack),
+  home_score = ifelse(is.na(total_home_score), 0, total_home_score),
+  away_score = ifelse(is.na(total_away_score), 0, total_away_score),
+  score_diff = ifelse(is.na(score_differential), 0, score_differential)
+  ) %>%
   group_by(game_id, defteam) %>%
   arrange(game_id, defteam, play_id) %>%  # play_id ensures chronological order
-  mutate(cum_qb_hits = cumsum(qb_hit)) %>%
+  mutate(cum_qb_hits = cumsum(qb_hit),
+  cum_sacks = cumsum(sack),
+  cum_hs = cumsum(home_score),
+  cum_as = cumsum(away_score),
+  cum_sd = cumsum(score_diff)
+  ) %>%
   ungroup()
 
 #pbp <- pbp[pbp$posteam == "KC", ]
@@ -141,5 +152,5 @@ pbp <- merge(x=pbp, y=stadium_mapping,by='game_stadium', all.x=TRUE)
 
 # games_weather <- cbind(pbp, do.call(rbind, weather_list))
 
-View(as.data.frame(pbp))
+View(as.data.frame(pbp2))
 
