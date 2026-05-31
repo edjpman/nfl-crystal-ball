@@ -44,16 +44,7 @@ data_subset <- function(df,colz,team) {
 }
 
 
-
-
-
-
-
-
 yrz <- 2009:2024
-
-
-
 
 
 collz1 <- c('play_id','game_id','home_team','away_team','season_type','week','down','quarter_seconds_remaining',
@@ -74,7 +65,6 @@ collz2 <- c('play_id','game_id','game_date','home_team','away_team','posteam','d
 pbp <- read_pbp(path = file3)
 
 pbp <- data_subset(df = pbp, colz = collz1, team = "KC")
-
 
 pbp <- data_subset(df = pbp, colz = collz2, team = "KC")
 
