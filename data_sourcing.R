@@ -5,6 +5,14 @@ library(jsonlite)
 library(dplyr)
 
 
+# --- Path configuration (relative to repo root) ---
+data_dir <- "data"
+file  <- file.path(data_dir, "pbp_2022_2024.rds")
+file2 <- file.path(data_dir, "pbp_2018_2024.rds")
+file3 <- file.path(data_dir, "pbp_2009_2024.rds")
+path22 <- file.path(data_dir, "pbp_compiled3.csv")
+
+
 ## Function to save play-by-play data 
 nfl_data_fetch <- function(years,path) {
     nflreadr::.clear_cache()
@@ -42,9 +50,6 @@ data_subset <- function(df,colz,team) {
 
 
 
-file <- "/.../repos/pbp_2022_2024.rds"
-file2 <- "/.../repos/pbp_2018_2024.rds"
-file3 <- "/.../repos/pbp_2009_2024.rds"
 yrz <- 2009:2024
 
 
@@ -290,7 +295,6 @@ View(as.data.frame(final_df))
 
 
 
-path22 = '/.../repos/pbp_compiled3.csv'
 write.csv(final_df, file = path22, row.names = TRUE)
 
 

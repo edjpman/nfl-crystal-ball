@@ -1,2 +1,7 @@
 .env
 .DS_Store
+*.rds
+*.csv
+__pycache__/
+*.pyc
+models/

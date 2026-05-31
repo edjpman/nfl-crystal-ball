@@ -1,0 +1,19 @@
+xgb:
+  n_estimators: 100
+  max_depth: 7
+  learning_rate: 0.05
+  reg_alpha: 0.1
+  reg_lambda: 2.0
+  colsample_bytree: 0.8
+  eval_metric: logloss
+  random_state: 42
+
+training:
+  threshold: 0.6
+  n_folds: 10
+  test_size: 4
+  random_seed: 42
+
+data:
+  target_team: KC
+  target_col: chiefs_win
