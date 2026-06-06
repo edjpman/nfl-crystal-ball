@@ -145,6 +145,20 @@ class featEng:
 
         df['qb_risk'] = (df['cum_qb_hits'] + df['cum_sacks'])/(2*df['cum_play_count'])
 
+        df['score_momentum'] = (
+            df.groupby('game_id')['cum_score_dif'].diff(3).fillna(0)
+        )
+
+        df['yards_per_play'] = df['cum_ydsgain'] / df['cum_play_count']
+
+        df['sack_rate'] = df['cum_sacks'] / (df['cum_pass_attmpt'] + 1e-6)
+
+        df['tfl_rate'] = df['cum_tfl'] / df['cum_play_count']
+
+        df['game_clock_pressure'] = (
+            (df['quarter'] - 1) * 900 + (900 - df['quarter_seconds_remaining'])
+        ) / 3600
+
         return df
         
 
