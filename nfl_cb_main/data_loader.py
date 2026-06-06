@@ -2,7 +2,8 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+import joblib
+from sklearn.preprocessing import OrdinalEncoder
 
 
 ############################
@@ -59,9 +60,10 @@ class featEng:
         """Initialize feature engineering with categorical column names.
 
         Args:
-            cat_cols: List of column names to label-encode during transformation.
+            cat_cols: List of column names to ordinally encode during transformation.
         """
         self.cat_cols = cat_cols
+        self.encoder = None
 
     def __repr__(self):
         return f"featEng(cat_cols={self.cat_cols!r})"
@@ -147,7 +149,7 @@ class featEng:
         
 
     def cat_transform(self,data):
-        """Label-encode configured categorical columns in place.
+        """Ordinally encode configured categorical columns and store the fitted encoder.
 
         Args:
             data: Input DataFrame containing the categorical columns.
@@ -155,12 +157,48 @@ class featEng:
         Returns:
             The DataFrame with categorical columns replaced by integer codes.
         """
-        df = data
-    
-        for col in self.cat_cols:
-            le = LabelEncoder()
-            df[col] = le.fit_transform(df[col])
-
+        df = data.copy()
+        self.encoder = OrdinalEncoder()
+        df[self.cat_cols] = self.encoder.fit_transform(df[self.cat_cols])
         return df
+
+    def transform_new(self, data):
+        """Apply the fitted encoder to new data without refitting.
+
+        Args:
+            data: Input DataFrame containing the categorical columns.
+
+        Returns:
+            The DataFrame with categorical columns replaced by integer codes.
+        """
+        if self.encoder is None:
+            raise ValueError("Encoder not fitted. Call cat_transform() or load_encoder() first.")
+        df = data.copy()
+        df[self.cat_cols] = self.encoder.transform(df[self.cat_cols])
+        return df
+
+    def save_encoder(self, path):
+        """Serialize the fitted encoder to disk.
+
+        Args:
+            path: File path where the encoder will be saved.
+
+        Returns:
+            None.
+        """
+        if self.encoder is None:
+            raise ValueError("No encoder to save. Call cat_transform() first.")
+        joblib.dump(self.encoder, path)
+
+    def load_encoder(self, path):
+        """Load a serialized encoder from disk.
+
+        Args:
+            path: File path to a previously saved encoder.
+
+        Returns:
+            None.
+        """
+        self.encoder = joblib.load(path)
 
 
