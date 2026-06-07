@@ -17,3 +17,10 @@ training:
 data:
   target_team: KC
   target_col: chiefs_win
+  dataset_path: data/pbp_compiled.csv
+  r_script_path: data_sourcing.R
+  refresh_data: false
+
+paths:
+  models_dir: models
+  outputs_dir: outputs
