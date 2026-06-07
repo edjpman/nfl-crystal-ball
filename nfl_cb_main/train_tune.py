@@ -4,7 +4,15 @@
 ####### Train/Tune Class ########
 #################################
 
-from sklearn.metrics import accuracy_score, log_loss, roc_auc_score, precision_score, recall_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    brier_score_loss,
+    log_loss,
+    roc_auc_score,
+    precision_score,
+    recall_score,
+    f1_score,
+)
 
 
 class TTD:
@@ -109,7 +117,7 @@ class TTD:
 
         Returns:
             A dict of metric names to scalar scores (accuracy, log_loss, auc,
-            precision, recall, and f1).
+            brier_score, roc_auc, precision, recall, and f1).
         """
         probs = self.predict_proba(X_test)[:, 1]
         preds = (probs >= threshold).astype(int)
@@ -118,6 +126,8 @@ class TTD:
             'accuracy': accuracy_score(y_test, preds),
             'log_loss': log_loss(y_test, probs),
             'auc': roc_auc_score(y_test, probs),
+            'brier_score': brier_score_loss(y_test, probs),
+            'roc_auc': roc_auc_score(y_test, probs),
             'precision': precision_score(y_test, preds),
             'recall': recall_score(y_test, preds),
             'f1': f1_score(y_test, preds)
