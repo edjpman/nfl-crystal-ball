@@ -5,15 +5,18 @@ library(jsonlite)
 library(dplyr)
 
 
-# --- Path configuration (relative to repo root) ---
-data_dir <- "data"
-file  <- file.path(data_dir, "pbp_2022_2024.rds")
-file2 <- file.path(data_dir, "pbp_2018_2024.rds")
-file3 <- file.path(data_dir, "pbp_2009_2024.rds")
-path22 <- file.path(data_dir, "pbp_compiled3.csv")
+# --- Configuration ---
+TEAM <- "KC"
+START_YEAR <- 2009
+END_YEAR <- 2024
+OUTPUT_PATH <- "./data/pbp_compiled.csv"
+RDS_CACHE_PATH <- "./data/pbp_raw.rds"
+
+stadium_mapping <- read.csv("./data/stadium_mapping.csv", stringsAsFactors = FALSE)
+yrz <- START_YEAR:END_YEAR
 
 
-## Function to save play-by-play data 
+## Function to save play-by-play data
 nfl_data_fetch <- function(years,path) {
     nflreadr::.clear_cache()
     message('Loading dataset from nflfastR...')
@@ -44,7 +47,6 @@ data_subset <- function(df,colz,team) {
 }
 
 
-yrz <- 2009:2024
 
 
 collz1 <- c('play_id','game_id','home_team','away_team','season_type','week','down','quarter_seconds_remaining',
@@ -62,11 +64,11 @@ collz2 <- c('play_id','game_id','game_date','home_team','away_team','posteam','d
 'third_down_failed','fourth_down_converted','fourth_down_failed','rush_attempt','pass_attempt','incomplete_pass','ydsnet','yards_gained','roof','surface')
 
 
-pbp <- read_pbp(path = file3)
+pbp <- read_pbp(path = RDS_CACHE_PATH)
 
-pbp <- data_subset(df = pbp, colz = collz1, team = "KC")
+pbp <- data_subset(df = pbp, colz = collz1, team = TEAM)
 
-pbp <- data_subset(df = pbp, colz = collz2, team = "KC")
+pbp <- data_subset(df = pbp, colz = collz2, team = TEAM)
 
 pbp <- pbp[pbp$play_id != 1, ]
 
@@ -116,9 +118,9 @@ pbp2 <- pbp %>%
 
 pbp <- pbp %>%
   mutate(
-    chiefs_score = case_when(
-      home_team == "KC" ~ total_home_score,
-      away_team == "KC" ~ total_away_score,
+    team_score = case_when(
+      home_team == TEAM ~ total_home_score,
+      away_team == TEAM ~ total_away_score,
       TRUE ~ NA_real_
     )
   )
@@ -127,19 +129,19 @@ pbp <- pbp %>%
 pbp <- pbp %>%
   mutate(
     opp_score = case_when(
-      home_team == "KC" ~ total_away_score,
-      away_team == "KC" ~ total_home_score,
+      home_team == TEAM ~ total_away_score,
+      away_team == TEAM ~ total_home_score,
       TRUE ~ NA_real_
     )
   )
 
 
 pbp <- pbp %>%
-  mutate(score_diff = chiefs_score - opp_score)
+  mutate(score_diff = team_score - opp_score)
 
 
 
-pbp2 <- pbp2[pbp2$posteam == 'KC' & !is.na(pbp2$posteam), ]
+pbp2 <- pbp2[pbp2$posteam == TEAM & !is.na(pbp2$posteam), ]
 
 
 
@@ -162,82 +164,56 @@ pbp_cumm <- pbp2[, c('play_id', 'game_id','home_team','away_team','posteam','def
 
 
 
-stadium_mapping <- data.frame(
-  city = c("New York", "Nashville", "Detroit", "Cincinnati", "Chicago", "Dallas", "Las Vegas",
-           "Green Bay", "Denver", "Jacksonville", "Kansas City", "Baltimore", "Philadelphia",
-           "Pittsburgh", "Cleveland", "San Francisco", "New Orleans", "Buffalo", "Boston",
-           "Tampa", "Indianapolis", "London", "London", "Munich", "Mexico City", "Frankfurt", "São Paulo","Charlotte",
-           "Atlanta","Houston","Los Angeles","Phoenix","Minneapolis","Kansas City","Seattle","Washington DC",
-           "Miami","Pittsburgh","Los Angeles","Oakland","Cincinnati","Oakland","Denver","Carson",
-           "Cleveland","St. Louis","Jacksonville","Atlanta","Denver","Jacksonville","Nashville",
-           "Oakland","San Diego","Seattle","Buffalo","Houston","Miami","Minneapolis","Phoenix"),
-  game_stadium = c("MetLife Stadium", "Nissan Stadium", "Ford Field", "Paycor Stadium", "Soldier Field",
-              "AT&T Stadium", "Allegiant Stadium", "Lambeau Field", "Empower Field at Mile High",
-              "TIAA Bank Stadium", "GEHA Field at Arrowhead Stadium", "M&T Bank Stadium",
-              "Lincoln Financial Field", "Acrisure Stadium", "FirstEnergy Stadium", "Levi's Stadium",
-              "Mercedes-Benz Superdome", "New Era Field", "Gillette Stadium", "Raymond James Stadium",
-              "Lucas Oil Stadium", "Tottenham Stadium", "Wembley Stadium", "Allianz Arena",
-              "Azteca Stadium", "Deutsche Bank Park", "Arena Corinthians","Bank of America Stadium",
-              "Mercedes-Benz Stadium","NRG Stadium","SoFi Stadium","State Farm Stadium","U.S. Bank Stadium","Arrowhead Stadium",
-              "CenturyLink Field","FedExField",
-              "Hard Rock Stadium","Heinz Field","Los Angeles Memorial Coliseum","Oakland-Alameda County Coliseum",
-              "Paul Brown Stadium","Ring Central Coliseum","Sports Authority Field at Mile High","StubHub Center",
-              "Cleveland Browns Stadium","Edward Jones Dome","EverBank Field","Georgia Dome","Invesco Field at Mile High","Jacksonville Municipal Stadium","LP Field",
-              "O.co Coliseum","Qualcomm Stadium","Qwest Field","Ralph Wilson Stadium","Reliant Stadium","Sun Life Stadium","TCF Bank Stadium","University of Phoenix Stadium"),
-    latitude = c('40.813778','36.166245','42.341563','39.095245','41.862065','32.746202','36.090415','44.502672','39.743563','30.323192','39.048364','39.278440','39.900706','40.447947',
-    '41.504749','37.402606','29.952629','42.775072','42.089961','27.974268','39.758160','51.604572','51.554642','48.217302','19.304293','50.067547','-23.544088',
-    '35.225253','33.754531','29.685818','33.952588','33.527185','44.972338','39.051848','47.595433','38.906812',
-    "25.957019","40.446759","34.013478","37.752702","39.095450","37.752702","39.743958","33.864022",
-    "41.505319","38.631677","30.324831","33.756263","39.744058","30.322966","36.167343",
-              "37.752504","32.783030","47.595152","42.774177","29.685154","25.960510","44.975956","33.527133"),
-    longitude = c('-74.074310','-86.771141','-83.044846','-84.515875','-87.616560','-97.093053','-115.185056','-88.063807','-105.022415','-81.639100',
-    '-94.485532','-76.624118','-75.169016','-80.016837',
-    '-81.699658','-121.971040','-90.081253','-78.789223','-71.265643','-82.504901','-86.162679','-0.066207','-0.279087','11.624038','-99.152843','8.644358','-46.473001',
-    '-80.851007','-84.399672','-95.412544','-118.342093','-112.689920','-93.258181','-94.488386','-122.333298','-76.866782',
-    "-80.241684","-80.017483","-118.290161","-122.198803","-84.518077","-122.198803","-105.022570","-118.262442",
-    "-81.697775","-90.188760","-81.635730","-84.402701","-105.022202","-81.635075","-86.770036",
-              "-122.199049","-117.122776","-122.333323","-78.788957","-95.412337","-80.240085","-93.226269","-112.264330"),
-  stringsAsFactors = FALSE
-)
-
-
-
 get_weather <- function(lat, lon, date) {
   base_url <- "https://archive-api.open-meteo.com/v1/archive"
-  
-  res <- GET(base_url, query = list(
-    latitude = lat,
-    longitude = lon,
-    start_date = date,
-    end_date = date,
-    daily = "temperature_2m_max,temperature_2m_min,precipitation_sum",
-    timezone = "auto"
-  ))
-  
-  weather <- fromJSON(content(res, "text", encoding = "UTF-8"))
-  return(weather$daily)
+
+  tryCatch({
+    res <- GET(base_url, query = list(
+      latitude = lat,
+      longitude = lon,
+      start_date = date,
+      end_date = date,
+      daily = "temperature_2m_max,temperature_2m_min,precipitation_sum",
+      timezone = "auto"
+    ))
+
+    weather <- fromJSON(content(res, "text", encoding = "UTF-8"))
+    return(weather$daily)
+  }, error = function(e) {
+    message(sprintf(
+      "Weather fetch failed for date %s at lat=%s, lon=%s: %s",
+      date, lat, lon, e$message
+    ))
+    return(data.frame(
+      time = NA_character_,
+      temperature_2m_max = NA_real_,
+      temperature_2m_min = NA_real_,
+      precipitation_sum = NA_real_,
+      stringsAsFactors = FALSE
+    ))
+  })
 }
 
 
 
 pbp <- merge(x=pbp, y=stadium_mapping,by='game_stadium', all.x=TRUE)
 
-pbp_non_cumm <- pbp[,c('game_id','play_id','posteam','quarter_seconds_remaining','time','qtr','chiefs_score','opp_score','score_diff')]
-pbp_non_cumm <- pbp_non_cumm[pbp_non_cumm$posteam == 'KC' & !is.na(pbp_non_cumm$posteam), ]
+pbp_non_cumm <- pbp[,c('game_id','play_id','posteam','quarter_seconds_remaining','time','qtr','team_score','opp_score','score_diff')]
+pbp_non_cumm <- pbp_non_cumm[pbp_non_cumm$posteam == TEAM & !is.na(pbp_non_cumm$posteam), ]
 
 
 pbp_gi <- pbp[, c('season','game_stadium','game_id','game_date','home_team','away_team','season_type','location','city',
-  'latitude','longitude','chiefs_score','opp_score','score_diff','roof','surface')]
+  'latitude','longitude','team_score','opp_score','score_diff','roof','surface')]
 
-pbp_gi$tot_scr <- pbp_gi$chiefs_score + pbp_gi$opp_score
+pbp_gi$tot_scr <- pbp_gi$team_score + pbp_gi$opp_score
 
 
 final_scores <- pbp_gi %>%
   group_by(game_id) %>%
   slice_max(order_by = tot_scr, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  mutate(chiefs_win = ifelse(chiefs_score > opp_score, 1, 0)) %>%
-  select(game_id, chiefs_score, opp_score, tot_scr, chiefs_win)
+  mutate(chiefs_win = ifelse(team_score > opp_score, 1, 0)) %>%
+  select(game_id, team_score, opp_score, tot_scr, chiefs_win)
 
 
 game_info <- pbp_gi %>%
@@ -251,9 +227,15 @@ game_info <- pbp_gi %>%
 
 print('Making weather API call...')
 weather_list <- lapply(1:nrow(game_info), function(i) {
- get_weather(game_info$latitude[i], game_info$longitude[i], game_info$game_date[i])
+  message(sprintf("Fetching weather %d/%d...", i, nrow(game_info)))
+  get_weather(game_info$latitude[i], game_info$longitude[i], game_info$game_date[i])
 })
 print('Weather data call finished!')
+
+failed_weather <- which(sapply(weather_list, is.null))
+if(length(failed_weather) > 0) {
+  message(sprintf("%d games missing weather data", length(failed_weather)))
+}
 
 weather_df <- bind_rows(weather_list)
 weather_df$latitude   <- game_info$latitude
@@ -285,6 +267,5 @@ View(as.data.frame(final_df))
 
 
 
-write.csv(final_df, file = path22, row.names = TRUE)
-
+write.csv(final_df, file = OUTPUT_PATH, row.names = TRUE)
 
