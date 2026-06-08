@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 models/
 docs/
+lib/
+bin/
+outputs/
+pyvenv.cfg

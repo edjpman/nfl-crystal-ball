@@ -172,7 +172,10 @@ class featEng:
             The DataFrame with categorical columns replaced by integer codes.
         """
         df = data.copy()
-        self.encoder = OrdinalEncoder()
+        self.encoder = OrdinalEncoder(
+            handle_unknown="use_encoded_value",
+            unknown_value=-1
+        )
         df[self.cat_cols] = self.encoder.fit_transform(df[self.cat_cols])
         return df
 

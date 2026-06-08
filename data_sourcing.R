@@ -64,6 +64,11 @@ collz2 <- c('play_id','game_id','game_date','home_team','away_team','posteam','d
 'third_down_failed','fourth_down_converted','fourth_down_failed','rush_attempt','pass_attempt','incomplete_pass','ydsnet','yards_gained','roof','surface')
 
 
+if (!file.exists(RDS_CACHE_PATH)) {
+    nfl_data_fetch(yrz, RDS_CACHE_PATH)
+}
+
+
 pbp <- read_pbp(path = RDS_CACHE_PATH)
 
 pbp <- data_subset(df = pbp, colz = collz1, team = TEAM)
@@ -263,8 +268,8 @@ final_df <- game_info_final %>%
 
 
 
-View(as.data.frame(final_df))
-
+#View(as.data.frame(final_df))
+print(head(final_df))
 
 
 write.csv(final_df, file = OUTPUT_PATH, row.names = TRUE)
